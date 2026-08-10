@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+artifacts/checkpoints/
+artifacts/cached_logits/
+artifacts/logs/
+artifacts/manifests/
+artifacts/splits/
+artifacts/results/
+artifacts/figures/
+

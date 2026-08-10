@@ -1,0 +1,47 @@
+mode: smoke
+seed: 42
+seeds: [42]
+device: auto
+paths:
+  dataset_root: garbage_classification
+  paper_root: ../paper
+  artifact_root: artifacts
+data:
+  num_classes: 12
+  image_size: 224
+  num_workers: 0
+  phash_distance: 4
+  corruption_tolerance: 0.01
+  smoke_train_per_class: 120
+  smoke_eval_per_class: 40
+model:
+  pretrained: true
+  dropout: 0.2
+  class_weight_min: 0.5
+  class_weight_max: 3.0
+training:
+  epochs: 2
+  static_epochs: 1
+  batch_size: 16
+  min_batch_size: 4
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  patience: 2
+  alpha: [0.2, 0.3, 0.5]
+  kd_temperature: 2.0
+  kd_gamma: 0.5
+routing:
+  base_thresholds: [0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
+  lambdas: [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+  rho: 20.0
+  min_threshold: 0.55
+  max_threshold: 0.99
+  macro_f1_tolerance: 0.01
+  recall_tolerance: 0.03
+  battery_recall_tolerance: 0.01
+profiling:
+  warmup_runs: 5
+  latency_runs: 25
+  energy_backend: codecarbon
+  carbon_intensity_g_per_kwh: null
+

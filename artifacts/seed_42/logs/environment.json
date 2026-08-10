@@ -1,0 +1,12 @@
+{
+  "config_fingerprint": "64b94d36cc242263",
+  "dataset_root": "/Users/blue/Desktop/EmergingAI/TBBA/code/garbage_classification",
+  "device": "mps",
+  "machine": "arm64",
+  "mode": "full",
+  "mps_available": true,
+  "mps_built": true,
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "python": "3.11.15",
+  "torch": "2.11.0"
+}
