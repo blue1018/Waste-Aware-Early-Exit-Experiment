@@ -3,11 +3,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ipynb_checkpoints/
-artifacts/checkpoints/
-artifacts/cached_logits/
-artifacts/logs/
-artifacts/manifests/
-artifacts/splits/
-artifacts/results/
-artifacts/figures/
 
+# Agent-generated design and implementation notes
+docs/superpowers/
+
+# Generated experiment outputs, checkpoints, caches, logs, and figures
+artifacts/

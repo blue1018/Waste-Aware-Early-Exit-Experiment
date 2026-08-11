@@ -212,6 +212,20 @@ For optional whole-system measurement, open a second terminal and run:
 
 This command asks for administrator permission. Stop it when the benchmark ends. The raw log is kept, and the parser reports the result as measured. Whole-system power can include unrelated background activity.
 
+## Recorded MPS training power sample
+
+A 60-second `powermetrics` sample was recorded on 2026-08-11 while the full experiment was training the Seed 2026 EfficientNet-B0 baseline on MPS (epoch 24). The Mac was a `MacBookPro18,1` running OS build `25F84`. Sampling ran from 11:57:50 to 11:58:50 Europe/Dublin at one-second intervals. The experiment log continued from approximately batch 129 to batch 134 during the measurement, so the power sampler did not interrupt training.
+
+| Quantity | Mean | Minimum | Maximum |
+|---|---:|---:|---:|
+| CPU power | 7.471 W | 5.885 W | 14.429 W |
+| GPU power | 1.018 W | 0.610 W | 4.929 W |
+| Combined CPU + GPU + ANE power | 8.494 W | 6.703 W | 19.381 W |
+
+The combined 60-second energy was **509.653 J**, equivalent to **0.14157 Wh** or **0.000141570 kWh**, across 60 valid samples. The [raw `powermetrics` log](artifacts/logs/powermetrics_training_sample_2026-08-11.txt) is retained for reproducibility.
+
+This is a whole-system training snapshot, not a process-isolated or paired baseline-versus-proposed measurement. It includes unrelated background activity and therefore does not by itself demonstrate that the early-exit method saves energy.
+
 FLOPs, latency, and energy are reported separately. A lower FLOP count does not automatically prove lower real energy use.
 
 # Literature evidence matrix
