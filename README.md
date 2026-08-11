@@ -15,15 +15,157 @@ code/
 ├── scripts/                                  # Environment and power helpers
 ├── waste_early_exit/                         # Reusable experiment code
 ├── tests/                                    # Unit and integration tests
-├── garbage_classification/                   # Existing image dataset
+├── garbage_classification/                   # Locally downloaded image dataset
 └── artifacts/                                # Generated outputs
 ```
 
 The notebook keeps the story readable. Training, calibration, routing, metrics, profiling, and plotting live in small Python modules.
 
-# Dataset
+# Installation, configuration, and usage
 
-The local dataset is the Kaggle Garbage Classification dataset. This copy has 15,515 images in 12 folders.
+Follow these steps in order. Restoring the published v1.0 artifacts in Step 3 is optional; skip it when you want to train everything locally.
+
+## 1. Download the dataset
+
+This experiment uses Mostafa Abla's [Garbage Classification (12 classes) dataset on Kaggle](https://www.kaggle.com/datasets/mostafaabla/garbage-classification/data). Dataset images are intentionally excluded from Git; the repository tracks only `garbage_classification/.gitkeep` so that the destination directory exists after cloning.
+
+Download the archive in a browser from the Kaggle page, or use the official [Kaggle CLI](https://github.com/Kaggle/kaggle-cli):
+
+```bash
+python -m pip install kaggle
+kaggle datasets download mostafaabla/garbage-classification --path . --unzip
+```
+
+The CLI requires Kaggle authentication; follow the official [authentication instructions](https://github.com/Kaggle/kaggle-cli/blob/main/docs/README.md#authentication). After extraction, ensure that the 12 class directories sit directly under the repository's `garbage_classification/` directory:
+
+```text
+garbage_classification/
+├── battery/
+├── biological/
+├── brown-glass/
+├── cardboard/
+├── clothes/
+├── green-glass/
+├── metal/
+├── paper/
+├── plastic/
+├── shoes/
+├── trash/
+└── white-glass/
+```
+
+From the repository root, this command should report `15515` for the dataset version used by this project:
+
+```bash
+find garbage_classification -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \) | wc -l
+```
+
+The dataset is maintained outside this repository. Review the current license and usage terms on its Kaggle page before redistributing it; the repository's software terms do not automatically replace the dataset's terms.
+
+## 2. Create the environment
+
+The helper script creates the Conda environment, registers the Jupyter kernel, and runs a real MPS forward/backward check.
+
+```bash
+chmod +x scripts/create_env.sh
+./scripts/create_env.sh
+conda activate waste-early-exit
+```
+
+The equivalent manual commands are:
+
+```bash
+conda env create -f environment.yml
+conda activate waste-early-exit
+python -m ipykernel install --user --name waste-early-exit --display-name "Python (waste-early-exit)"
+```
+
+Check Apple MPS directly:
+
+```bash
+python -c "import torch; print(torch.__version__); print(torch.backends.mps.is_built()); print(torch.backends.mps.is_available())"
+```
+
+Expected output on the target Mac ends with `True` and `True`. Run the check in a native macOS terminal. A sandboxed process can hide MPS even when the Mac supports it.
+
+## 3. Optionally restore the v1.0 checkpoints and results
+
+Large checkpoints and generated results are distributed through GitHub Releases rather than the Git repository:
+
+| Item | Value |
+|---|---|
+| Release title | `Checkpoint and result v1.0` |
+| Git tag | `v1.0` |
+| Archive | `artifacts-v1.0.zip` |
+| Release page | [Checkpoint and result v1.0](https://github.com/blue1018/code/releases/tag/v1.0) |
+| Archive layout | One top-level `artifacts/` directory |
+
+The link becomes available after the Release and archive have been published. The archive does not contain the Kaggle dataset.
+
+Download it in a browser from the Release page, or use either command:
+
+```bash
+curl -L -o artifacts-v1.0.zip \
+  https://github.com/blue1018/code/releases/download/v1.0/artifacts-v1.0.zip
+
+# Alternative for users with the GitHub CLI installed:
+gh release download v1.0 \
+  --repo blue1018/code \
+  --pattern 'artifacts-v1.0.zip'
+```
+
+Extract the archive from the repository root:
+
+```bash
+unzip artifacts-v1.0.zip -d .
+```
+
+Use a clean clone or preserve an existing local `artifacts/` directory before extraction so that your own results are not overwritten. A correctly packaged archive restores `artifacts/seed_42/`, `artifacts/seed_123/`, `artifacts/seed_2026/`, and `artifacts/aggregate/`.
+
+The package contains the full-run outputs, checkpoints, cached logits, frozen manifests and splits, tables, figures, and logs present when v1.0 was created. Results can be inspected immediately under `artifacts/aggregate/results/`; plots are under directories such as `artifacts/seed_42/figures/`.
+
+## 4. Configure the notebook
+
+The first parameter cell in `Waste_Aware_Early_Exit_Experiment.ipynb` contains:
+
+```python
+RUN_MODE = "smoke"
+FORCE_REBUILD = False
+```
+
+Choose values according to the task:
+
+| Goal | `RUN_MODE` | `FORCE_REBUILD` | Behavior |
+|---|---|---|---|
+| First pipeline check | `"smoke"` | `False` | Runs the small end-to-end validation and reuses valid caches |
+| Full experiment | `"full"` | `False` | Runs seeds 42, 123, and 2026 and trains only missing or invalid stages |
+| Reuse the v1.0 release | `"full"` | `False` | Reuses release artifacts when the code, data inventory, and configuration match |
+| Rebuild data audit and splits | `"smoke"` or `"full"` | `True` | Recomputes the data preparation state and invalidates dependent work as needed |
+
+Use `smoke` first. Change to `full` only after checking the smoke outputs. For the best release-cache compatibility, use the `v1.0` Git tag with the same dataset version and directory layout.
+
+## 5. Run the notebook
+
+```bash
+conda activate waste-early-exit
+jupyter lab Waste_Aware_Early_Exit_Experiment.ipynb
+```
+
+Choose the `Python (waste-early-exit)` kernel, confirm the parameter cell, then use **Run All**.
+
+Every main table and chart appears directly in the notebook. The same results are saved under `artifacts/` for the report.
+
+In `full` mode, **Run All** completes seeds 42, 123, and 2026 automatically. Each seed uses an isolated folder such as `artifacts/seed_42/`. The notebook then displays and saves the raw seed results, mean, standard deviation, and 95% confidence interval under `artifacts/aggregate/results/`.
+
+## 6. Resume or reuse cached work
+
+Each stage checks the normalized configuration and data inventory before accepting a cached artifact. Changes to the dataset, seed, model, or training configuration invalidate dependent work. Checkpoints preserve the model, optimizer, scheduler, epoch, best score, random state, and effective batch size.
+
+Keep `FORCE_REBUILD = False` to reuse compatible checkpoints and caches. Set it to `True` when the data audit and splits must be rebuilt. To deliberately repeat training with the same configuration, first preserve or move the matching checkpoint and cached-logit files out of `artifacts/`. Only load PyTorch checkpoints obtained from a release you trust.
+
+# Dataset details
+
+The local dataset version used for this project contains 15,515 images in 12 class folders:
 
 | Class | Images |
 |---|---:|
@@ -50,52 +192,6 @@ The outer data policy is:
 - 10% locked test data for one final evaluation.
 
 Inside the 70% development block, one fold is used only for model validation and early stopping. This keeps calibration and routing data clean.
-
-# Create the environment
-
-The helper script creates the Conda environment, registers the Jupyter kernel, and runs a real MPS forward/backward check.
-
-```bash
-chmod +x scripts/create_env.sh
-./scripts/create_env.sh
-conda activate waste-early-exit
-```
-
-The equivalent manual commands are:
-
-```bash
-conda env create -f environment.yml
-conda activate waste-early-exit
-python -m ipykernel install --user --name waste-early-exit --display-name "Python (waste-early-exit)"
-```
-
-Check Apple MPS directly:
-
-```bash
-python -c "import torch; print(torch.__version__); print(torch.backends.mps.is_built()); print(torch.backends.mps.is_available())"
-```
-
-Expected output on the target Mac ends with `True` and `True`. Run the check in a native macOS terminal. A sandboxed process can hide MPS even when the Mac supports it.
-
-# Run the notebook
-
-```bash
-conda activate waste-early-exit
-jupyter lab Waste_Aware_Early_Exit_Experiment.ipynb
-```
-
-Choose the `Python (waste-early-exit)` kernel, then use **Run All**. The first parameter cell contains:
-
-```python
-RUN_MODE = "smoke"
-FORCE_REBUILD = False
-```
-
-Use `smoke` first. Change to `full` only after checking the smoke outputs.
-
-Every main table and chart appears directly in the notebook. The same results are saved under `artifacts/` for the report.
-
-In `full` mode, **Run All** completes seeds 42, 123, and 2026 automatically. Each seed uses an isolated folder such as `artifacts/seed_42/`. The notebook then displays and saves the raw seed results, mean, standard deviation, and 95% confidence interval under `artifacts/aggregate/results/`.
 
 # Expected runtime
 
@@ -188,12 +284,6 @@ artifacts/
 └── logs/            # Environment and energy logs
 ```
 
-# Cache and restart behavior
-
-Each stage uses the normalized configuration and data inventory to decide whether a cached artifact is still valid. A changed dataset, seed, model setting, or training setting invalidates dependent work. Checkpoints preserve model, optimizer, scheduler, epoch, best score, random state, and effective batch size.
-
-Set `FORCE_REBUILD = True` in the notebook when you want to rebuild the data audit and splits. To repeat training with the same configuration, move the matching checkpoint and cached-logit files out of `artifacts/` first. Keep old full-run artifacts if they support reported results.
-
 # MPS memory behavior
 
 The project prefers MPS, then records the exact device in each run. It does not silently move a benchmark to CPU.
@@ -222,7 +312,7 @@ A 60-second `powermetrics` sample was recorded on 2026-08-11 while the full expe
 | GPU power | 1.018 W | 0.610 W | 4.929 W |
 | Combined CPU + GPU + ANE power | 8.494 W | 6.703 W | 19.381 W |
 
-The combined 60-second energy was **509.653 J**, equivalent to **0.14157 Wh** or **0.000141570 kWh**, across 60 valid samples. The [raw `powermetrics` log](artifacts/logs/powermetrics_training_sample_2026-08-11.txt) is retained for reproducibility.
+The combined 60-second energy was **509.653 J**, equivalent to **0.14157 Wh** or **0.000141570 kWh**, across 60 valid samples. The raw `powermetrics` log is retained locally at `artifacts/logs/powermetrics_training_sample_2026-08-11.txt`; generated artifacts are intentionally excluded from Git.
 
 This is a whole-system training snapshot, not a process-isolated or paired baseline-versus-proposed measurement. It includes unrelated background activity and therefore does not by itself demonstrate that the early-exit method saves energy.
 
