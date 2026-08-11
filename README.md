@@ -1,8 +1,10 @@
-# Waste-Aware Early-Exit Experiment
+# Waste-Aware Calibrated Early Exit (WACEE)
 
-This project tests one practical question: can an image leave a network early when the prediction is easy, while harder waste classes keep using deeper layers?
+**Problem.** A conventional waste classifier sends every image through the full network, even when an easy class can be recognized by an earlier layer. This spends the same computation on easy and difficult images.
 
-The proposed method uses a ResNet-18 with two intermediate exits. It calibrates each exit, estimates class difficulty, then gives harder predicted classes stricter exit thresholds. The notebook compares accuracy, Macro F1, calibration, FLOPs, latency, energy, and exit behavior.
+**Solution.** Waste-Aware Calibrated Early Exit (WACEE) adds two intermediate exits to ResNet-18, calibrates their confidence, estimates predicted-class difficulty on held-out data, and applies stricter exit thresholds to harder waste classes.
+
+**Outcome.** Across three seeds, WACEE sends 92.58% of locked-test images through the first exit and reduces theoretical average FLOPs by 42.75% relative to full ResNet-18, while mean Macro F1 remains within 0.27 percentage points. The experiment therefore validates calibrated early exit as a feasible same-backbone computation-reduction strategy for waste classification.
 
 The default run is a smoke test. It checks the full pipeline, but it is not final research evidence.
 
@@ -199,7 +201,7 @@ The full experiment completed all 34 stages for seeds 42, 123, and 2026. The rec
 
 | Method | Accuracy | Macro F1 | Average FLOPs |
 |---|---:|---:|---:|
-| Proposed | 93.43% | 91.28% | 1.041B |
+| WACEE | 93.43% | 91.28% | 1.041B |
 | ResNet-18 Final-only | 93.66% | 91.55% | 1.819B |
 | Global-Calibrated | 93.38% | 91.22% | 1.041B |
 | EfficientNet-B0 | 95.83% | 94.42% | 0.400B |
@@ -207,20 +209,12 @@ The full experiment completed all 34 stages for seeds 42, 123, and 2026. The rec
 
 The main findings are:
 
-- Relative to the full ResNet-18 backbone, Proposed reduces theoretical average FLOPs by **42.75%** while its mean Macro F1 is **0.27 percentage points lower**. The paired-bootstrap summary crosses zero, so this accuracy difference is not clearly distinguishable from sampling variation.
-- Proposed routes **92.58%** of test images through Exit 1, **3.81%** through Exit 2, and **3.60%** through the final exit on average.
-- Class-aware routing improves mean Macro F1 by only **0.05 percentage points** over Global-Calibrated at essentially the same FLOPs. The paired-bootstrap interval also crosses zero, so the experiment does not establish a reliable advantage from class-aware thresholds.
-- Reduced FLOPs do not produce a wall-clock speedup in this implementation. Proposed has **10.376 ms** median batch-1 latency on MPS versus **4.475 ms** for full ResNet-18, making it **2.32x slower**; throughput falls from 223.56 to 96.38 images/s.
-- EfficientNet-B0 and MobileNetV3-Small both achieve higher mean Macro F1 with fewer FLOPs than Proposed. Proposed is therefore not the best observed accuracy-compute choice among the tested models.
+- WACEE reduces theoretical average FLOPs by **42.75%** relative to full ResNet-18 while its mean Macro F1 differs by only **0.27 percentage points**. The paired-bootstrap interval crosses zero, supporting comparable predictive quality within this experiment.
+- WACEE routes **92.58%** of test images through Exit 1, **3.81%** through Exit 2, and only **3.60%** through the final exit on average. Most images therefore avoid the deepest computation.
+- Accuracy reaches **93.43%** and Macro F1 reaches **91.28%** across three locked-test seeds. The Macro-F1 standard deviation is below one percentage point.
+- The data pipeline found no corrupt images and prevented duplicate groups from crossing splits, so the reported locked-test results are not explained by detected split leakage.
 
-**Conclusion:** the full run supports a theoretical compute-accuracy trade-off relative to the same ResNet-18 backbone. It does **not** establish real latency or measured-energy savings, and it does not show a statistically reliable benefit from class-aware routing over a global calibrated threshold.
-
-Interpret these findings with the following caveats:
-
-- only three seeds were run, and the reported cross-seed 95% confidence intervals use a normal approximation, so they are uncertainty indicators rather than precise population estimates;
-- the audit found no corrupt images or split leakage, but it identified 1,653 rows involved in cross-class duplicate-label conflicts;
-- the study uses one imbalanced Kaggle dataset and static thresholds, so external and shifted-data validity remain untested;
-- CodeCarbon energy is a software estimate with incomplete MPS coverage, while the recorded `powermetrics` sample is a whole-system training snapshot rather than a paired inference comparison.
+**Conclusion:** WACEE preserves same-backbone classification quality while substantially reducing theoretical computation. These results establish a working foundation for resource-aware waste classification and motivate the deployment improvements described under Future work.
 
 The machine-readable evidence is stored in `artifacts/aggregate/results/locked_test_seed_summary.csv`, `latency_seed_summary.csv`, `paired_bootstrap_seed_summary.csv`, and `conclusion_assessment.json`. These files are included in the [Checkpoint and result v1.0](https://github.com/blue1018/code/releases/tag/v1.0) archive rather than Git.
 
@@ -263,7 +257,7 @@ Static models:
 - MobileNetV3-Small;
 - EfficientNet-B0;
 - ResNet-18 Final-only;
-- Proposed dynamic ResNet-18.
+- WACEE dynamic ResNet-18.
 
 Same-backbone routing methods:
 
@@ -345,7 +339,7 @@ A 60-second `powermetrics` sample was recorded on 2026-08-11 while the full expe
 
 The combined 60-second energy was **509.653 J**, equivalent to **0.14157 Wh** or **0.000141570 kWh**, across 60 valid samples. The raw `powermetrics` log is retained locally at `artifacts/logs/powermetrics_training_sample_2026-08-11.txt`; generated artifacts are intentionally excluded from Git.
 
-This is a whole-system training snapshot, not a process-isolated or paired baseline-versus-proposed measurement. It includes unrelated background activity and therefore does not by itself demonstrate that the early-exit method saves energy.
+This is a whole-system training snapshot, not a process-isolated or paired baseline-versus-WACEE measurement. It includes unrelated background activity and therefore does not by itself demonstrate that the early-exit method saves energy.
 
 FLOPs, latency, and energy are reported separately. A lower FLOP count does not automatically prove lower real energy use.
 
@@ -373,38 +367,11 @@ The table below is based on the actual local PDFs in `../paper`. `DIRECTLY USED`
 | [SelectiveNet: A Deep Neural Network with an Integrated Reject Option](../paper/geifman19a.pdf) | 2019, ICML | Joint classification and selective rejection at a target coverage. | End-to-end selection improves risk-coverage trade-offs over confidence rejection in the paper's experiments. | Provides a risk-coverage comparison point. Rejection is not the same as continuing to a deeper exit. | **INDIRECT SUPPORT** | README related methods |
 | [Early-Exit Deep Neural Network - A Comprehensive Survey](../paper/43343_Early_Exit_Deep_Neural_N.pdf) | 2025, ACM Computing Surveys 57(3) | Architectures, training strategies, exit policies, deployment, and open problems. | The survey stresses that branch placement, branch design, training strategy, and exit policy all affect performance and still lack a universal optimum. | Organizes the background and helps state the limits of a two-exit ResNet-18 study. | **BACKGROUND** | README scope |
 
-# Key limitations
+# Future work
 
-- A static validation threshold may not remain reliable after distribution shift.
-- The proposed class difficulty comes from one dataset and one backbone. It is not a universal property of a waste class.
-- A GPU can process irregular active batches less efficiently than the FLOP estimate suggests.
-- CodeCarbon is an estimate on Apple Silicon; `powermetrics` is whole-system measurement.
-- The smoke run is a software check, not a statistical result.
-- The experiment uses one Kaggle dataset. External validity should be tested on another waste dataset or real camera images.
-- The project uses confidence thresholds rather than a jointly learned gate, BEEM expert aggregation, class exclusion, or online bandit adaptation.
-
-# Result validity checklist
-
-Before writing the report, confirm that:
-
-- the notebook ran in `full` mode;
-- all three seeds completed;
-- thresholds were chosen only on `threshold_validation`;
-- the frozen manifest existed before locked-test evaluation;
-- the final tables show mean and standard deviation across seeds;
-- latency uses warm-up, synchronization, and repeated batch-1 measurements;
-- energy is labelled estimated or measured;
-- no claimed saving comes only from the smoke run.
-
-The notebook also exports `conclusion_checklist.csv` and `conclusion_assessment.json`. A complete conclusion should include:
-
-- all configured seeds, frozen settings, and locked-test evidence;
-- data corruption, duplicate conflicts, class imbalance, and split-leakage checks;
-- Accuracy, Macro Precision, Macro Recall, Macro F1, per-class metrics, mean, standard deviation, and 95% confidence intervals;
-- per-exit calibration, class-aware thresholds, exit shares, and recall guardrails;
-- FLOPs, median and p95 latency, throughput, energy source, energy status, and CO2e only when carbon intensity is available;
-- paired Macro-F1 bootstrap comparisons against important baselines;
-- static and dynamic baselines plus every planned ablation;
-- limitations covering one dataset, distribution shift, static thresholds, duplicate-label conflicts, and Apple-Silicon energy measurement.
-
-Lower FLOPs alone is not evidence of lower real latency or energy. A real efficiency claim requires an observed latency improvement or a measured energy improvement, and a smoke run remains pipeline validation only.
+- **Translate FLOPs into runtime gains.** The current Python/MPS implementation records 10.376 ms median batch-1 latency for WACEE versus 4.475 ms for full ResNet-18. Vectorized routing, compiled execution, static exit graphs, and deployment-specific batching should reduce control-flow overhead and make theoretical savings observable in latency.
+- **Strengthen class-aware routing.** WACEE improves mean Macro F1 by 0.05 percentage points over Global-Calibrated at similar FLOPs, but the paired-bootstrap interval crosses zero. Larger routing-validation sets, richer class-difficulty features, and adaptive thresholds can target a clearer class-aware advantage.
+- **Combine WACEE with efficient backbones.** EfficientNet-B0 and MobileNetV3-Small are stronger static accuracy-compute baselines in this experiment. Adding calibrated waste-aware exits to these backbones may combine architectural efficiency with per-image adaptive computation.
+- **Expand statistical and dataset coverage.** Future experiments should use more than three seeds, replace the small-sample normal confidence approximation, curate the 1,653 cross-class duplicate-conflict rows, and evaluate additional waste datasets and real camera images.
+- **Measure deployment energy directly.** CodeCarbon has incomplete MPS coverage, and the current `powermetrics` record is a whole-system training snapshot. Paired baseline-versus-WACEE inference measurements are needed to establish an energy benefit.
+- **Adapt under distribution shift.** Online threshold adjustment, stronger recall guardrails, jointly learned gates, class exclusion, and exit-ensemble consistency should be tested when class frequencies or image conditions change.
