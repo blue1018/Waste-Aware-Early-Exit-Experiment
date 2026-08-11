@@ -193,6 +193,37 @@ The outer data policy is:
 
 Inside the 70% development block, one fold is used only for model validation and early stopping. This keeps calibration and routing data clean.
 
+# Full-run findings (v1.0)
+
+The full experiment completed all 34 stages for seeds 42, 123, and 2026. The recorded orchestration time was 58,610 seconds (16 hours, 16 minutes, and 50 seconds) on the local Apple M1 Pro/MPS system. The table reports means across the three locked test splits:
+
+| Method | Accuracy | Macro F1 | Average FLOPs |
+|---|---:|---:|---:|
+| Proposed | 93.43% | 91.28% | 1.041B |
+| ResNet-18 Final-only | 93.66% | 91.55% | 1.819B |
+| Global-Calibrated | 93.38% | 91.22% | 1.041B |
+| EfficientNet-B0 | 95.83% | 94.42% | 0.400B |
+| MobileNetV3-Small | 94.36% | 92.46% | 0.059B |
+
+The main findings are:
+
+- Relative to the full ResNet-18 backbone, Proposed reduces theoretical average FLOPs by **42.75%** while its mean Macro F1 is **0.27 percentage points lower**. The paired-bootstrap summary crosses zero, so this accuracy difference is not clearly distinguishable from sampling variation.
+- Proposed routes **92.58%** of test images through Exit 1, **3.81%** through Exit 2, and **3.60%** through the final exit on average.
+- Class-aware routing improves mean Macro F1 by only **0.05 percentage points** over Global-Calibrated at essentially the same FLOPs. The paired-bootstrap interval also crosses zero, so the experiment does not establish a reliable advantage from class-aware thresholds.
+- Reduced FLOPs do not produce a wall-clock speedup in this implementation. Proposed has **10.376 ms** median batch-1 latency on MPS versus **4.475 ms** for full ResNet-18, making it **2.32x slower**; throughput falls from 223.56 to 96.38 images/s.
+- EfficientNet-B0 and MobileNetV3-Small both achieve higher mean Macro F1 with fewer FLOPs than Proposed. Proposed is therefore not the best observed accuracy-compute choice among the tested models.
+
+**Conclusion:** the full run supports a theoretical compute-accuracy trade-off relative to the same ResNet-18 backbone. It does **not** establish real latency or measured-energy savings, and it does not show a statistically reliable benefit from class-aware routing over a global calibrated threshold.
+
+Interpret these findings with the following caveats:
+
+- only three seeds were run, and the reported cross-seed 95% confidence intervals use a normal approximation, so they are uncertainty indicators rather than precise population estimates;
+- the audit found no corrupt images or split leakage, but it identified 1,653 rows involved in cross-class duplicate-label conflicts;
+- the study uses one imbalanced Kaggle dataset and static thresholds, so external and shifted-data validity remain untested;
+- CodeCarbon energy is a software estimate with incomplete MPS coverage, while the recorded `powermetrics` sample is a whole-system training snapshot rather than a paired inference comparison.
+
+The machine-readable evidence is stored in `artifacts/aggregate/results/locked_test_seed_summary.csv`, `latency_seed_summary.csv`, `paired_bootstrap_seed_summary.csv`, and `conclusion_assessment.json`. These files are included in the [Checkpoint and result v1.0](https://github.com/blue1018/code/releases/tag/v1.0) archive rather than Git.
+
 # Expected runtime
 
 These estimates target the local Apple M1 Pro with 16 GB unified memory.
