@@ -345,7 +345,6 @@ FLOPs, latency, and energy are reported separately. A lower FLOP count does not 
 
 # Literature evidence matrix
 
-The table below is based on the actual local PDFs in `../paper`. `DIRECTLY USED` means a method or reporting rule appears in this code. `INDIRECT SUPPORT` means the paper supports feasibility or an alternative design, but that method is not implemented. `BACKGROUND` provides framing or survey coverage.
 
 | Local paper | Year and source | What it studies | Evidence and result used here | Role in this project | Usage | Code link |
 |---|---|---|---|---|---|---|
