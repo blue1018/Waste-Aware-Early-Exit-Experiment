@@ -7,6 +7,7 @@ __pycache__/
 # Generated experiment outputs, checkpoints, caches, logs, and figures
 artifacts/
 
+
 # Downloaded Kaggle dataset; keep only the directory placeholder in Git
 garbage_classification/*
 !garbage_classification/.gitkeep
