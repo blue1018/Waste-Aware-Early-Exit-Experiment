@@ -216,7 +216,7 @@ The main findings are:
 
 **Conclusion:** WACEE preserves same-backbone classification quality while substantially reducing theoretical computation. These results establish a working foundation for resource-aware waste classification and motivate the deployment improvements described under Future work.
 
-The machine-readable evidence is stored in `artifacts/aggregate/results/locked_test_seed_summary.csv`, `latency_seed_summary.csv`, `paired_bootstrap_seed_summary.csv`, and `conclusion_assessment.json`. These files are included in the [Checkpoint and result v1.0](https://github.com/blue1018/code/releases/tag/v1.0) archive rather than Git.
+The machine-readable evidence is stored in `artifacts/aggregate/results/locked_test_seed_summary.csv`, `latency_seed_summary.csv`, `paired_bootstrap_seed_summary.csv`, and `conclusion_assessment.json`. These files are included in the [Checkpoint and result v1.0](https://github.com/blue1018/Waste-Aware-Early-Exit-Experiment/releases/tag/result) archive rather than Git.
 
 # Expected runtime
 
