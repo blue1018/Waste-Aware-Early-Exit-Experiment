@@ -4,9 +4,6 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# Agent-generated design and implementation notes
-docs/superpowers/
-
 # Generated experiment outputs, checkpoints, caches, logs, and figures
 artifacts/
 
