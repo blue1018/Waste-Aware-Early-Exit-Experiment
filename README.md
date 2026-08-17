@@ -99,7 +99,7 @@ Large checkpoints and generated results are distributed through GitHub Releases 
 | Release title | `Checkpoint and result v1.0` |
 | Git tag | `v1.0` |
 | Archive | `artifacts-v1.0.zip` |
-| Release page | [Checkpoint and result v1.0](https://github.com/blue1018/code/releases/tag/v1.0) |
+| Release page | [Checkpoint and result v1.0](https://github.com/blue1018/Waste-Aware-Early-Exit-Experiment/releases/tag/result) |
 | Archive layout | One top-level `artifacts/` directory |
 
 The link becomes available after the Release and archive have been published. The archive does not contain the Kaggle dataset.
