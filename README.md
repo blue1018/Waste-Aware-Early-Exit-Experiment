@@ -110,11 +110,6 @@ Download it in a browser from the Release page, or use either command:
 curl -L -o artifacts-v1.0.zip \
   https://github.com/blue1018/Waste-Aware-Early-Exit-Experiment/releases/download/result/artifacts.zip
 
-# Alternative for users with the GitHub CLI installed:
-gh release download v1.0 \
-  --repo blue1018/code \
-  --pattern 'artifacts-v1.0.zip'
-```
 
 Extract the archive from the repository root:
 
