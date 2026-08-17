@@ -97,24 +97,24 @@ Large checkpoints and generated results are distributed through GitHub Releases 
 | Item | Value |
 |---|---|
 | Release title | `Checkpoint and result v1.0` |
-| Git tag | `v1.0` |
-| Archive | `artifacts-v1.0.zip` |
+| Git tag | `result` |
+| Archive | `artifacts.zip` |
 | Release page | [Checkpoint and result v1.0](https://github.com/blue1018/Waste-Aware-Early-Exit-Experiment/releases/tag/result) |
 | Archive layout | One top-level `artifacts/` directory |
 
-The link becomes available after the Release and archive have been published. The archive does not contain the Kaggle dataset.
+The archive does not contain the Kaggle dataset.
 
-Download it in a browser from the Release page, or use either command:
+Download it in a browser from the Release page, or use the following command:
 
 ```bash
-curl -L -o artifacts-v1.0.zip \
+curl -L -o artifacts.zip \
   https://github.com/blue1018/Waste-Aware-Early-Exit-Experiment/releases/download/result/artifacts.zip
-
+```
 
 Extract the archive from the repository root:
 
 ```bash
-unzip artifacts-v1.0.zip -d .
+unzip artifacts.zip -d .
 ```
 
 Use a clean clone or preserve an existing local `artifacts/` directory before extraction so that your own results are not overwritten. A correctly packaged archive restores `artifacts/seed_42/`, `artifacts/seed_123/`, `artifacts/seed_2026/`, and `artifacts/aggregate/`.
@@ -139,7 +139,7 @@ Choose values according to the task:
 | Reuse the v1.0 release | `"full"` | `False` | Reuses release artifacts when the code, data inventory, and configuration match |
 | Rebuild data audit and splits | `"smoke"` or `"full"` | `True` | Recomputes the data preparation state and invalidates dependent work as needed |
 
-Use `smoke` first. Change to `full` only after checking the smoke outputs. For the best release-cache compatibility, use the `v1.0` Git tag with the same dataset version and directory layout.
+Use `smoke` first. Change to `full` only after checking the smoke outputs. For the best release-cache compatibility, use the `result` Git tag with the same dataset version and directory layout.
 
 ## 5. Run the notebook
 
